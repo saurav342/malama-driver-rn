@@ -2,6 +2,7 @@ import { useSignIn } from "@clerk/clerk-expo";
 import { Link, router } from "expo-router";
 import { useCallback, useState } from "react";
 import { Alert, Image, ScrollView, Text, View } from "react-native";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import CustomButton from "@/components/CustomButton";
 import InputField from "@/components/InputField";
@@ -9,7 +10,7 @@ import OAuth from "@/components/OAuth";
 import { icons, images } from "@/constants";
 
 const SignIn = () => {
-  const { signIn, setActive, isLoaded } = useSignIn();
+  const { setActive } = useSignIn();
 
   const [form, setForm] = useState({
     email: "",
@@ -17,27 +18,36 @@ const SignIn = () => {
   });
 
   const onSignInPress = useCallback(async () => {
-    if (!isLoaded) return;
-
     try {
-      const signInAttempt = await signIn.create({
-        identifier: form.email,
-        password: form.password,
+      const response = await fetch('http://13.48.149.128:3000/v1/auth/login/driver', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          driverIdentity: form.email,
+          password: form.password,
+        }),
       });
 
-      if (signInAttempt.status === "complete") {
-        await setActive({ session: signInAttempt.createdSessionId });
-        router.replace("/(root)/(tabs)/home");
+      const signInAttempt = await response.json();
+
+      console.log('...response.tokens..', response);
+      console.log('...signInAttempt..', signInAttempt);
+      if (response.ok) {
+        await AsyncStorage.setItem('authToken', signInAttempt.tokens.access.token);
+        // await setActive({ session: signInAttempt.createdSessionId });
+
+        router.replace("/(tabs)/home");
       } else {
-        // See https://clerk.com/docs/custom-flows/error-handling for more info on error handling
         console.log(JSON.stringify(signInAttempt, null, 2));
         Alert.alert("Error", "Log in failed. Please try again.");
       }
     } catch (err: any) {
       console.log(JSON.stringify(err, null, 2));
-      Alert.alert("Error", err.errors[0].longMessage);
+      Alert.alert("Error", err.message || "An unexpected error occurred.");
     }
-  }, [isLoaded, form]);
+  }, [form]);
 
   return (
     <ScrollView className="flex-1 bg-white">
@@ -74,16 +84,6 @@ const SignIn = () => {
             onPress={onSignInPress}
             className="mt-6"
           />
-
-          <OAuth />
-
-          <Link
-            href="/sign-up"
-            className="text-lg text-center text-general-200 mt-10"
-          >
-            Don't have an account?{" "}
-            <Text className="text-primary-500">Sign Up</Text>
-          </Link>
         </View>
       </View>
     </ScrollView>

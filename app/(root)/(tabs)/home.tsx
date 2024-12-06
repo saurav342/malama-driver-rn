@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { useUser, useAuth } from "@clerk/clerk-expo";
-import axios from "axios";
 import { router } from "expo-router";
 import {
   Text,
@@ -13,9 +12,11 @@ import {
   SafeAreaView,
 } from "react-native";
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { images } from "@/constants";
 import { useLocationStore } from "@/store";
+import RideCard from '../../components/RideCard';
 
 type Ride = {
   id: string;
@@ -46,32 +47,6 @@ type ApiResponse = {
   totalResults: number;
 };
 
-const RideCard = ({ ride }: { ride: Ride }) => (
-  <View style={styles.appointmentCard}>
-    <View style={styles.dateSection}>
-      {/* <Text style={styles.dateType}>Live Ride</Text> */}
-      {/* <Text style={styles.dateNumber}>{new Date(ride.ride.pickupTime).getDate()}</Text> */}
-      {/* <Text style={styles.dateMonth}>{new Date(ride.ride.pickupTime).toLocaleString('default', { month: 'short' })}</Text> */}
-      <Text style={styles.dateNumber}>{Math.floor(Math.random() * 31) + 1} Mins</Text>
-
-    </View>
-    <View style={styles.detailsSection}>
-      <Text style={styles.rideType}>Ride to {ride.ride.destinationAddress.split(',')[0]}</Text>
-      <Text style={styles.driverName}>{ride.user.fullName}</Text>
-      <Text style={styles.price}>Since {Math.floor(Math.random() * 100) + 1} Days</Text>
-      <View style={styles.timeSection}>
-        <Text style={styles.time}>{new Date(ride.ride.pickupTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
-        <TouchableOpacity>
-          <Text style={styles.appointmentLink}>Ride Details →</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-    <TouchableOpacity style={styles.bellIcon}>
-      <Ionicons name="notifications-outline" size={24} color="#999" />
-    </TouchableOpacity>
-  </View>
-);
-
 const Home = () => {
   const { user } = useUser();
   const { signOut } = useAuth();
@@ -85,11 +60,20 @@ const Home = () => {
   const fetchRides = async () => {
     try {
       setLoading(true);
-      const response = await axios.get<ApiResponse>('http://13.48.149.128:3000/v1/rides');
-      console.log('response.....', response.data.results);
-      setAllRides(response.data.results);
+      const token = await AsyncStorage.getItem('authToken');
+      console.log('..............token', token);
+      const response = await fetch('http://13.48.149.128:3000/v1/rides/driver/B1', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      const data = await response.json();
+      console.log('response.....', data);
+      setAllRides(data);
       // Filter live rides
-      const filteredLiveRides = response.data.results.filter(ride => ride.ride.status.toLowerCase() === 'live');
+      const filteredLiveRides = data.filter(ride => ride.ride.status.toLowerCase() === 'live');
       setLiveRides(filteredLiveRides);
     } catch (err) {
       setError('Failed to fetch rides');
