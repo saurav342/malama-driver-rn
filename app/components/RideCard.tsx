@@ -169,6 +169,7 @@ const styles = StyleSheet.create({
 const RideCard = ({ ride }: { ride: any }) => {
   const [showDetails, setShowDetails] = useState(false);
   const [swipeStatusMessage, setSwipeStatusMessage] = useState('');
+  const [isRideCompleted, setIsRideCompleted] = useState(false);
 
   const handleNavigateToPickup = () => {
     const pickup = `${ride.ride.userLatitude},${ride.ride.userLongitude}`;
@@ -252,6 +253,7 @@ const RideCard = ({ ride }: { ride: any }) => {
       console.log('response..ok...', response);
       if (response.ok) {
         Alert.alert('Ride completed successfully!');
+        setIsRideCompleted(true);
       } else {
         Alert.alert('Failed to complete ride');
       }
@@ -262,28 +264,30 @@ const RideCard = ({ ride }: { ride: any }) => {
 
   return (
     <View>
-      <TouchableOpacity style={styles.appointmentCard} onPress={() => setShowDetails(!showDetails)}>
-        <View style={styles.dateSection}>
-          <Text style={styles.dateNumber}>{getTimeRemaining()}</Text>
-        </View>
-        <View style={styles.detailsSection}>
-          <Text style={styles.rideType}>Time Remaining: {getTimeRemaining()}</Text>
-          <Text style={styles.driverName}>Name : {ride.user.name}</Text>
-          <Text style={styles.driverName}>Phone number : {ride.user.phoneNumber}</Text>
-          <Text style={styles.price}>Pickup: {ride.ride.pickupAddress}</Text>
-          <Text style={styles.price}>Destination: {ride.ride.destinationAddress}</Text>
-          <View style={styles.timeSection}>
-            <Text style={styles.time}>{ride.ride.finalDateTime}</Text>
-            <TouchableOpacity>
-              <Text style={styles.appointmentLink}>Ride Details →</Text>
-            </TouchableOpacity>
+      {!isRideCompleted && (
+        <TouchableOpacity style={styles.appointmentCard} onPress={() => setShowDetails(!showDetails)}>
+          <View style={styles.dateSection}>
+            <Text style={styles.dateNumber}>{getTimeRemaining()}</Text>
           </View>
-        </View>
-        <TouchableOpacity style={styles.bellIcon}>
-          <Ionicons name="notifications-outline" size={24} color="#999" />
+          <View style={styles.detailsSection}>
+            <Text style={styles.rideType}>Time Remaining: {getTimeRemaining()}</Text>
+            <Text style={styles.driverName}>Name : {ride.user.name}</Text>
+            <Text style={styles.driverName}>Phone number : {ride.user.phoneNumber}</Text>
+            <Text style={styles.price}>Pickup: {ride.ride.pickupAddress}</Text>
+            <Text style={styles.price}>Destination: {ride.ride.destinationAddress}</Text>
+            <View style={styles.timeSection}>
+              <Text style={styles.time}>{ride.ride.finalDateTime}</Text>
+              <TouchableOpacity>
+                <Text style={styles.appointmentLink}>Ride Details →</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+          <TouchableOpacity style={styles.bellIcon}>
+            <Ionicons name="notifications-outline" size={24} color="#999" />
+          </TouchableOpacity>
         </TouchableOpacity>
-      </TouchableOpacity>
-      {showDetails && (
+      )}
+      {showDetails && !isRideCompleted && (
         <View style={styles.detailsContainer}>
           <Text>Pickup Address: {ride.ride.pickupAddress}</Text>
           <Text>Destination Address: {ride.ride.destinationAddress}</Text>
