@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, Linking } from "react-native";
 import { Ionicons } from '@expo/vector-icons';
+import moment from "moment";
 
 const styles = StyleSheet.create({
   container: {
@@ -158,23 +159,54 @@ const RideCard = ({ ride }: { ride: any }) => {
   };
 
   const getTimeRemaining = () => {
-    const now = new Date();
-    const pickupTime = new Date(ride.ride.pickupTime);
-    const timeDiff = pickupTime.getTime() - now.getTime();
-    const hours = Math.floor(timeDiff / (1000 * 60 * 60));
-    const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
-    return `${hours}h ${minutes}m`;
+    const now = moment();
+
+    // Ensure ride and ride.ride.finalDateTime exist
+    if (!ride || !ride.ride.finalDateTime) {
+      console.error("Invalid ride or finalDateTime");
+      return "Invalid data";
+    }
+
+    try {
+      // Assuming finalDateTime is like "10th December 2024 06:07 AM"
+      const finalDateTime = moment(ride.ride.finalDateTime, "Do MMMM YYYY hh:mm A", true);
+
+      // Check if the date is valid
+      if (!finalDateTime.isValid()) {
+        console.error("Invalid date format in finalDateTime");
+        return "Invalid date";
+      }
+
+      // Calculate the difference in milliseconds
+      const timeDiff = finalDateTime.diff(now);
+
+      // Check if the time is in the past
+      if (timeDiff <= 0) {
+        return "Time has passed";
+      }
+
+      // Get the duration
+      const duration = moment.duration(timeDiff);
+      const days = Math.floor(duration.asDays());
+      const hours = Math.floor(duration.asHours()) % 24;
+      const minutes = duration.minutes();
+
+      return `${days}d ${hours}h ${minutes}m`;
+    } catch (error) {
+      console.error("Error calculating time remaining:", error);
+      return "Error occurred";
+    }
   };
 
   return (
     <View>
       <TouchableOpacity style={styles.appointmentCard} onPress={() => setShowDetails(!showDetails)}>
         <View style={styles.dateSection}>
-          <Text style={styles.dateNumber}>{Math.floor(Math.random() * 31) + 1} Mins</Text>
+          <Text style={styles.dateNumber}>{getTimeRemaining()}</Text>
         </View>
         <View style={styles.detailsSection}>
           <Text style={styles.rideType}>Time Remaining: {getTimeRemaining()}</Text>
-          <Text style={styles.driverName}>User: {ride.user.fullName}</Text>
+          <Text style={styles.driverName}>Phone number : {ride.user.phoneNumber}</Text>
           <Text style={styles.price}>Pickup: {ride.ride.pickupAddress}</Text>
           <Text style={styles.price}>Destination: {ride.ride.destinationAddress}</Text>
           <View style={styles.timeSection}>
@@ -192,8 +224,11 @@ const RideCard = ({ ride }: { ride: any }) => {
         <View style={styles.detailsContainer}>
           <Text>Pickup Address: {ride.ride.pickupAddress}</Text>
           <Text>Destination Address: {ride.ride.destinationAddress}</Text>
-          <Text>Price: ${ride.ride.price}</Text>
-          <Text>Pickup Time: {new Date(ride.ride.pickupTime).toLocaleString()}</Text>
+          <Text>Final Date & Time: {ride.ride.finalDateTime}</Text>
+          <TouchableOpacity style={styles.navigateButton} onPress={() => Linking.openURL(`tel:${ride.user.phoneNumber}`)}>
+            <Ionicons name="call-outline" size={24} color="#0066FF" />
+            <Text style={styles.navigateText}>Call User</Text>
+          </TouchableOpacity>
           <TouchableOpacity style={styles.navigateButton} onPress={handleNavigate}>
             <Ionicons name="navigate-outline" size={24} color="#0066FF" />
             <Text style={styles.navigateText}>Navigate</Text>
