@@ -1,5 +1,5 @@
-import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import React, { useState } from "react";
+import { View, Text, TouchableOpacity, StyleSheet, Linking } from "react-native";
 import { Ionicons } from '@expo/vector-icons';
 
 const styles = StyleSheet.create({
@@ -112,30 +112,100 @@ const styles = StyleSheet.create({
   bellIcon: {
     marginLeft: 'auto',
   },
+  detailsContainer: {
+    padding: 20,
+    backgroundColor: 'white',
+    borderRadius: 10,
+    marginTop: 10,
+  },
+  navigateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  navigateText: {
+    marginLeft: 5,
+    color: '#0066FF',
+  },
+  ridePreviewButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#ddd',
+    paddingTop: 10,
+  },
+  ridePreviewText: {
+    marginLeft: 5,
+    color: '#0066FF',
+  },
 });
 
-const RideCard = ({ ride }: { ride: any }) => (
-  <View style={styles.appointmentCard}>
-    <View style={styles.dateSection}>
-      <Text style={styles.dateNumber}>{Math.floor(Math.random() * 31) + 1} Mins</Text>
-    </View>
-    <View style={styles.detailsSection}>
-      <Text style={styles.rideType}>Ride to {ride.ride.destinationAddress.split(',')[0]}</Text>
-      <Text style={styles.driverName}>{ride.user.fullName}</Text>
-      <Text style={styles.price}>Since {Math.floor(Math.random() * 100) + 1} Days</Text>
-      <View style={styles.timeSection}>
-        <Text style={styles.time}>{new Date(ride.ride.pickupTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
-        <TouchableOpacity>
-          <Text style={styles.appointmentLink}>Ride Details →</Text>
+const RideCard = ({ ride }: { ride: any }) => {
+  const [showDetails, setShowDetails] = useState(false);
+
+  const handleNavigate = () => {
+    const destination = encodeURIComponent(ride.ride.destinationAddress);
+    const url = `https://www.google.com/maps/dir/?api=1&destination=${destination}`;
+    Linking.openURL(url);
+  };
+
+  const handleRidePreview = () => {
+    const origin = encodeURIComponent(ride.ride.pickupAddress);
+    const destination = encodeURIComponent(ride.ride.destinationAddress);
+    const url = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}`;
+    Linking.openURL(url);
+  };
+
+  const getTimeRemaining = () => {
+    const now = new Date();
+    const pickupTime = new Date(ride.ride.pickupTime);
+    const timeDiff = pickupTime.getTime() - now.getTime();
+    const hours = Math.floor(timeDiff / (1000 * 60 * 60));
+    const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+    return `${hours}h ${minutes}m`;
+  };
+
+  return (
+    <View>
+      <TouchableOpacity style={styles.appointmentCard} onPress={() => setShowDetails(!showDetails)}>
+        <View style={styles.dateSection}>
+          <Text style={styles.dateNumber}>{Math.floor(Math.random() * 31) + 1} Mins</Text>
+        </View>
+        <View style={styles.detailsSection}>
+          <Text style={styles.rideType}>Time Remaining: {getTimeRemaining()}</Text>
+          <Text style={styles.driverName}>User: {ride.user.fullName}</Text>
+          <Text style={styles.price}>Pickup: {ride.ride.pickupAddress}</Text>
+          <Text style={styles.price}>Destination: {ride.ride.destinationAddress}</Text>
+          <View style={styles.timeSection}>
+            <Text style={styles.time}>{new Date(ride.ride.pickupTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+            <TouchableOpacity>
+              <Text style={styles.appointmentLink}>Ride Details →</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+        <TouchableOpacity style={styles.bellIcon}>
+          <Ionicons name="notifications-outline" size={24} color="#999" />
         </TouchableOpacity>
-      </View>
+      </TouchableOpacity>
+      {showDetails && (
+        <View style={styles.detailsContainer}>
+          <Text>Pickup Address: {ride.ride.pickupAddress}</Text>
+          <Text>Destination Address: {ride.ride.destinationAddress}</Text>
+          <Text>Price: ${ride.ride.price}</Text>
+          <Text>Pickup Time: {new Date(ride.ride.pickupTime).toLocaleString()}</Text>
+          <TouchableOpacity style={styles.navigateButton} onPress={handleNavigate}>
+            <Ionicons name="navigate-outline" size={24} color="#0066FF" />
+            <Text style={styles.navigateText}>Navigate</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.ridePreviewButton} onPress={handleRidePreview}>
+            <Ionicons name="car-outline" size={24} color="#0066FF" />
+            <Text style={styles.ridePreviewText}>Ride Preview</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
-    <TouchableOpacity style={styles.bellIcon}>
-      <Ionicons name="notifications-outline" size={24} color="#999" />
-    </TouchableOpacity>
-  </View>
-);
-
-
+  );
+};
 
 export default RideCard;
