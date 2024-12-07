@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, Linking, Alert } from "react-
 import { Ionicons } from '@expo/vector-icons';
 import moment from "moment";
 import SwipeButton from 'rn-swipe-button';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const styles = StyleSheet.create({
   container: {
@@ -233,6 +234,32 @@ const RideCard = ({ ride }: { ride: any }) => {
     Alert.alert(message);
   };
 
+  const completeRide = async () => {
+    console.log('.....ride.......', ride);
+    const rideId = ride._id; // Assuming ride ID is available in the ride object
+    const token = await AsyncStorage.getItem('authToken');
+    const url = `http://13.48.149.128:3000/v1/rides/complete/ride/${rideId}`;
+
+    try {
+      const response = await fetch(url, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      console.log('response..ok...', response);
+      if (response.ok) {
+        Alert.alert('Ride completed successfully!');
+      } else {
+        Alert.alert('Failed to complete ride');
+      }
+    } catch (error) {
+      Alert.alert('An error occurred while completing the ride');
+    }
+  };
+
   return (
     <View>
       <TouchableOpacity style={styles.appointmentCard} onPress={() => setShowDetails(!showDetails)}>
@@ -278,7 +305,7 @@ const RideCard = ({ ride }: { ride: any }) => {
             <Text style={styles.ridePreviewText}>Ride Preview</Text>
           </TouchableOpacity>
           <SwipeButton
-            onSwipeSuccess={() => updateSwipeStatusMessage('Ride completed successfully!')}
+            onSwipeSuccess={completeRide}
             railBackgroundColor="#0066FF"
             thumbIconBackgroundColor="#FFFFFF"
             title="Complete Ride"
