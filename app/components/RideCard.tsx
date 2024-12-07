@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Linking } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Linking, Alert } from "react-native";
 import { Ionicons } from '@expo/vector-icons';
 import moment from "moment";
+import SwipeButton from 'rn-swipe-button';
 
 const styles = StyleSheet.create({
   container: {
@@ -113,47 +114,76 @@ const styles = StyleSheet.create({
   bellIcon: {
     marginLeft: 'auto',
   },
+  completeRideButton: {
+    backgroundColor: '#0066FF',
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 20,
+    height: 40,
+    width: 200,
+  },
+  completeRideText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  sliderContainer: {
+    marginTop: 20,
+    alignItems: 'center',
+  },
   detailsContainer: {
     padding: 20,
-    backgroundColor: 'white',
-    borderRadius: 10,
-    marginTop: 10,
   },
   navigateButton: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#0066FF',
+    padding: 10,
+    borderRadius: 10,
     marginTop: 10,
   },
   navigateText: {
-    marginLeft: 5,
-    color: '#0066FF',
+    color: 'white',
+    fontSize: 16,
+    marginLeft: 10,
   },
   ridePreviewButton: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#0066FF',
+    padding: 10,
+    borderRadius: 10,
     marginTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: '#ddd',
-    paddingTop: 10,
   },
   ridePreviewText: {
-    marginLeft: 5,
-    color: '#0066FF',
+    color: 'white',
+    fontSize: 16,
+    marginLeft: 10,
   },
 });
 
 const RideCard = ({ ride }: { ride: any }) => {
   const [showDetails, setShowDetails] = useState(false);
+  const [swipeStatusMessage, setSwipeStatusMessage] = useState('');
 
-  const handleNavigate = () => {
-    const destination = encodeURIComponent(ride.ride.destinationAddress);
+  const handleNavigateToPickup = () => {
+    const pickup = `${ride.ride.userLatitude},${ride.ride.userLongitude}`;
+    const url = `https://www.google.com/maps/dir/?api=1&destination=${pickup}`;
+    Linking.openURL(url);
+  };
+
+  const handleNavigateToDestination = () => {
+    const destination = `${ride.ride.destinationLatitude},${ride.ride.destinationLongitude}`;
     const url = `https://www.google.com/maps/dir/?api=1&destination=${destination}`;
     Linking.openURL(url);
   };
 
   const handleRidePreview = () => {
-    const origin = encodeURIComponent(ride.ride.pickupAddress);
-    const destination = encodeURIComponent(ride.ride.destinationAddress);
+    const origin = `${ride.ride.userLatitude},${ride.ride.userLongitude}`;
+    const destination = `${ride.ride.destinationLatitude},${ride.ride.destinationLongitude}`;
     const url = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}`;
     Linking.openURL(url);
   };
@@ -198,6 +228,11 @@ const RideCard = ({ ride }: { ride: any }) => {
     }
   };
 
+  const updateSwipeStatusMessage = (message: string) => {
+    // setSwipeStatusMessage(message);
+    Alert.alert(message);
+  };
+
   return (
     <View>
       <TouchableOpacity style={styles.appointmentCard} onPress={() => setShowDetails(!showDetails)}>
@@ -206,11 +241,12 @@ const RideCard = ({ ride }: { ride: any }) => {
         </View>
         <View style={styles.detailsSection}>
           <Text style={styles.rideType}>Time Remaining: {getTimeRemaining()}</Text>
+          <Text style={styles.driverName}>Name : {ride.user.name}</Text>
           <Text style={styles.driverName}>Phone number : {ride.user.phoneNumber}</Text>
           <Text style={styles.price}>Pickup: {ride.ride.pickupAddress}</Text>
           <Text style={styles.price}>Destination: {ride.ride.destinationAddress}</Text>
           <View style={styles.timeSection}>
-            <Text style={styles.time}>{new Date(ride.ride.pickupTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+            <Text style={styles.time}>{ride.ride.finalDateTime}</Text>
             <TouchableOpacity>
               <Text style={styles.appointmentLink}>Ride Details →</Text>
             </TouchableOpacity>
@@ -229,14 +265,25 @@ const RideCard = ({ ride }: { ride: any }) => {
             <Ionicons name="call-outline" size={24} color="#0066FF" />
             <Text style={styles.navigateText}>Call User</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.navigateButton} onPress={handleNavigate}>
+          <TouchableOpacity style={styles.navigateButton} onPress={handleNavigateToPickup}>
             <Ionicons name="navigate-outline" size={24} color="#0066FF" />
-            <Text style={styles.navigateText}>Navigate</Text>
+            <Text style={styles.navigateText}>Navigate to Pickup</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.navigateButton} onPress={handleNavigateToDestination}>
+            <Ionicons name="navigate-outline" size={24} color="#0066FF" />
+            <Text style={styles.navigateText}>Navigate to Destination</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.ridePreviewButton} onPress={handleRidePreview}>
             <Ionicons name="car-outline" size={24} color="#0066FF" />
             <Text style={styles.ridePreviewText}>Ride Preview</Text>
           </TouchableOpacity>
+          <SwipeButton
+            onSwipeSuccess={() => updateSwipeStatusMessage('Ride completed successfully!')}
+            railBackgroundColor="#0066FF"
+            thumbIconBackgroundColor="#FFFFFF"
+            title="Complete Ride"
+            titleColor="#FFFFFF"
+          />
         </View>
       )}
     </View>
